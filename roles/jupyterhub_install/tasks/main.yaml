@@ -1,0 +1,27 @@
+---
+- name: install tljh
+  ansible.builtin.include_tasks:
+    file: install.yaml
+    apply:
+      tags:
+        - install
+  tags:
+    - always
+
+- name: uninstall tljh
+  ansible.builtin.include_tasks:
+    file: uninstall.yaml
+    apply:
+      tags:
+        - uninstall
+  tags:
+    - always
+
+- name: launch_services
+  ansible.builtin.include_tasks:
+    file: launch_services.yaml
+    apply:
+      tags:
+        - launch_services
+  tags:
+    - always

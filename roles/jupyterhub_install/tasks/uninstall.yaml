@@ -1,0 +1,91 @@
+---
+- name: stop jupyter_service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: jupyterhub.service
+    state: stopped
+
+- name: stop traefik_service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: traefik.service
+    state: stopped
+
+- name: disable jupyter_service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: jupyterhub.service
+    enabled: no 
+
+- name: disable traefik_service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: traefik.service
+    enabled: no 
+
+- name: delete systemd jupyter_service
+  become: true
+  file:
+    path: /etc/systemd/system/jupyterhub.service
+    state: absent
+
+- name: delete systemd traefik_service
+  become: true
+  file:
+    path: /etc/systemd/system/traefik.service
+    state: absent
+
+- name: stop delete-sessions.service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: delete-sessions.service
+    state: stopped
+
+- name: stop delete-users.service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: delete-users.service
+    state: stopped
+
+- name: disable delete-sessions.service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: delete-sessions.service
+    enabled: no
+
+- name: disable delete-users.service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: delete-users.service
+    enabled: no
+
+- name: delete delete-sessions.service
+  become: true
+  file:
+    path: /etc/systemd/system/delete-sessions.service
+    state: absent
+
+- name: delete delete-users.service
+  become: true
+  file:
+    path: /etc/systemd/system/delete-users.service
+    state: absent
+    
+- name: delete application folder
+  become: true
+  file:
+    path: /opt/tljh
+    state: absent
+
+- name: systemd_daemon_reload
+  become: true
+  systemd:
+    daemon_reload: yes

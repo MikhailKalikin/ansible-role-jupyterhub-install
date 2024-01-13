@@ -1,0 +1,8 @@
+jupyter_apt_packages:
+  - python3 
+  - python3-dev 
+  - git 
+  - curl
+jupyter_admin_user: admin
+ansible_user: user
+jupyter_admin_token: true

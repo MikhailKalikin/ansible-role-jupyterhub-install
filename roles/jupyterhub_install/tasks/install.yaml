@@ -1,0 +1,79 @@
+---
+
+- name: Upgrade all packages to the latest version
+  shell: apt update -y
+
+- name: Check if each package is installed
+  command: dpkg -s {{ item }}
+  register: package_status
+  failed_when: "package_status.rc != 0 and 'not installed' not in package_status.stderr"
+  with_items: "{{ jupyter_apt_packages }}"
+  changed_when: false
+
+- name: Install apt packages if not already installed
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ jupyter_apt_packages }}"
+  when: package_status.results | selectattr('rc', 'equalto', 1) | map(attribute='item') | list | length > 0
+
+
+- name: Check if JupyterHub directory exists
+  stat: 
+    path: /opt/tljh
+  register: jupyterhub_directory
+  changed_when: false    
+
+- name: "Start installation process"
+  shell: "curl -L https://tljh.jupyter.org/bootstrap.py | sudo -E python3 - --admin {{ jupyter_admin_user }}"
+  when: not jupyterhub_directory.stat.exists
+
+- name: "Check start page running"
+  uri:
+    url: "http://{{ ansible_play_hosts | join('') }}"
+    method: GET
+  register: app_status
+  until: app_status.status == 200
+  retries: 10
+  delay: 6
+
+- name: "Print address"
+  debug:
+    msg:
+      - "Start page available in: http://{{ ansible_play_hosts | join('') }}"
+      - "Admin user name: {{ jupyter_admin_user }}"
+
+- name: Check if nbgitpuller is already installed
+  command: pip show nbgitpuller
+  register: nbgitpuller_status
+  ignore_errors: true
+  changed_when: false
+
+- name: Install nbgitpuller using pip
+  pip:
+    name: nbgitpuller
+    state: present
+  when: nbgitpuller_status.rc != 0
+
+- name: Выполнить команду mamba -V
+  command: /opt/tljh/user/bin/mamba -V
+  become: true
+
+- name: Выполнить команду mamba install -y -c conda-forge xeus-cling
+  command: /opt/tljh/user/bin/mamba install -y -c conda-forge xeus-cling
+  become: true
+
+- name: Выполнить команду mamba create  -y --name everest python=2.7
+  command: /opt/tljh/user/bin/mamba create  -y --name everest python=2.7
+  become: true
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,107 @@
+---
+- name: Copy python scripts for manage sesssions
+  become: true
+  template:
+    src: delete_sessions.py.j2
+    dest: /opt/tljh/delete_sessions.py
+    owner: root
+    group: root
+    mode: 0755
+
+
+- name: Copy python scripts for manage users
+  become: true
+  template:
+    src: delete_users.py.j2
+    dest: /opt/tljh/delete_users.py
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Copy config.json
+  become: true
+  template:
+    src: config.json
+    dest: /opt/tljh/config.json
+    owner: root
+    group: root
+    mode: 0755
+
+
+- name: Create log-file for scripts delete_users.py
+  become: true
+  file:
+    path: /opt/tljh/history_users.log
+    state: touch
+    mode: 0644
+
+- name: Create log-file for scripts delete_session.py
+  become: true
+  file:
+    path: /opt/tljh/history_users.log
+    state: touch
+    mode: 0644
+
+- name: Create jupyter-notebook  for manage user and session by runtime 
+  become: true
+  template:
+    src: User-management.ipynb
+    dest: /home/jupyter-admin/User-management.ipynb
+    mode: 0644
+
+- name: Copy service file for manage sessions
+  become: true
+  template:
+    src: delete-sessions.service.j2
+    dest: /etc/systemd/system/delete-sessions.service
+    owner: root
+    group: root
+    mode: 0755
+  notify: restart delete-sessions.service
+
+
+- name: Copy service file for manage users
+  become: true
+  template:
+    src: delete-users.service.j2
+    dest: /etc/systemd/system/delete-users.service
+    owner: root
+    group: root
+    mode: 0755
+  notify: restart delete-users.service
+
+- name: enable delete-sessions.service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: delete-sessions.service
+    enabled: yes
+
+- name: enable delete-users.service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: delete-users.service
+    enabled: yes
+
+- name: Enable Authenticator for tljh
+  shell: sudo tljh-config set auth.type nativeauthenticator.NativeAuthenticator
+
+- name: sudo tljh-config reload
+  shell: sudo tljh-config reload
+
+- name: Enable option open register for tljh
+  shell: sudo tljh-config set auth.NativeAuthenticator.open_signup True
+  
+- name: sudo tljh-config reload
+  shell: sudo tljh-config reload  
+
+- name: Copy modify config for link everest repo
+  become: true
+  template:
+    src: jupyterhub_config.py.j2
+    dest: /opt/tljh/hub/lib/python3.10/site-packages/tljh/jupyterhub_config.py
+    owner: root
+    group: root
+    mode: 0755
+  notify: restart jupyterhub.service

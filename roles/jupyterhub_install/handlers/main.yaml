@@ -1,0 +1,22 @@
+---
+- name: restart delete-sessions.service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: delete-sessions.service
+    state: restarted
+
+- name: restart delete-users.service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: delete-users.service
+    state: restarted
+
+- name: restart jupyterhub.service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: jupyterhub.service
+    state: restarted
+    

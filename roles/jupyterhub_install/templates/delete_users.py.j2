@@ -1,0 +1,120 @@
+import requests
+import shutil
+import os
+from datetime import datetime
+from time import sleep
+import json
+import logging
+
+logging.basicConfig(filename='/opt/tljh/history_users.log', level=logging.DEBUG)
+
+url = "{{ ansible_play_hosts | join('') }}" # Домен или айпи
+token= "{{ jupyter_admin_token }}"
+api_url="http://" + url + "/hub/api"
+
+
+class user:
+    def __init__(self, user_name, user_user_is_admin, user_latest_time_online):
+        self.user_name=user_name
+        self.user_is_admin=user_user_is_admin
+        self.user_latest_time_online=user_latest_time_online
+
+    def getName(self):
+        return self.user_name
+
+    def getUserIsAdmin(self):
+        return self.user_is_admin
+
+    def getUserLatestTimeOnline(self):
+        return self.user_latest_time_online
+
+
+# returns full list of info about users
+def getInfoList():
+    users_list_req=requests.get(api_url+'/users', headers={'Authorization': f'token {token}', })
+    users_list_req.raise_for_status()
+    usersInfoList=users_list_req.json()
+    return usersInfoList
+
+
+# returns list of all users
+def getUsersList(usersInfoList):
+    users_list=[]
+    for i in range(len(usersInfoList)):
+        user_name=usersInfoList[i]['name']
+
+        user_latest_time_online=usersInfoList[i]['last_activity']
+        if ('admin' in usersInfoList[i]['roles']):
+            user_is_admin=1
+        else:
+            user_is_admin=0
+            users_list.append(user(user_name, user_is_admin, user_latest_time_online))
+    return users_list
+
+
+# deletes unactive users
+def deleteUnactiveUsers(usersList, time_out_user):
+    curr_datetime=datetime.utcnow()
+    for i in range(len(usersList)):
+        if (usersList[i].getUserIsAdmin()!=1) and (str(usersList[i].getUserLatestTimeOnline())!="None"):
+            user_time= datetime.strptime(str(usersList[i].getUserLatestTimeOnline()), '%Y-%m-%dT%H:%M:%S.%fz' )
+            if (abs(user_time.timestamp()-curr_datetime.timestamp())>time_out_user):
+                name=str(usersList[i].getName())
+                delete_user_req=requests.delete(api_url+'/users/'+name, headers={'Authorization': f'token {token}', })
+                delete_user_req.raise_for_status()
+                if os.path.isdir("/home/jupiter-" + name):
+                    os.system(f"sudo rm -r /home/jupyter-{name}")
+                logging.info(f"deleted {name}!")
+    logging.info("-------")
+# prints all active users
+
+
+def printUsers(usersList):
+    for i in range(len(usersList)):
+        logging.info(f"Name: {usersList[i].getName()}, Has Admin: {usersList[i].getUserIsAdmin()}, Latest Activity: {usersList[i].getUserLatestTimeOnline()}")
+
+
+def load_config(file_path="/opt/tljh/config.json"):
+    try:
+        with open(file_path, "r") as file:
+            config = json.load(file)
+        return config
+    except FileNotFoundError:
+        print(f"Файл конфигурации {file_path} не найден.")
+        return None
+
+
+def save_config(config, file_path="/opt/tljh/config.json"):
+    with open(file_path, "w") as file:
+        json.dump(config, file, indent=2)
+
+
+def get_time_outs():
+    config = load_config()
+    if config is None:
+        # Создаем новый конфиг, если файл не найден
+        config = {"time_out_user": 600, "time_out_sessions": 600}
+        save_config(config)
+    time_out_user = config["time_out_user"]
+    time_out_sessions = config["time_out_sessions"]
+    return time_out_user, time_out_sessions
+
+
+def main():
+    time_out_user, time_out_sessions = get_time_outs()
+    logging.info(f"time_out_user: {time_out_user}")
+    logging.info(f"time_out_sessions: {time_out_sessions}")
+
+    users_list=getUsersList(getInfoList())
+    json_formatted_str=json.dumps(getInfoList(), indent=2)
+    logging.info(json_formatted_str)
+    while True:
+        users_list=getUsersList(getInfoList())
+        deleteUnactiveUsers(users_list, time_out_user)
+        sleep(10)
+
+
+if __name__ == "__main__":
+    main()
+
+
