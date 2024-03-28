@@ -54,7 +54,7 @@
   pip:
     name: nbgitpuller
     state: present
-    when: nbgitpuller_status.rc != 0 and not ansible_check_mode
+  when: nbgitpuller_status.rc != 0 and not ansible_check_mode
 
 - name: Выполнить команду mamba -V
   command: /opt/tljh/user/bin/mamba -V
