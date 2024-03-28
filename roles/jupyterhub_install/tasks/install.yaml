@@ -1,16 +1,16 @@
 ---
 
-- name: Upgrade all packages to the latest version
+- name: Обновите все пакеты до последней версии
   shell: apt update -y
 
-- name: Check if each package is installed
+- name: Проверка, установлен ли каждый пакет
   command: dpkg -s {{ item }}
   register: package_status
   failed_when: "package_status.rc != 0 and 'not installed' not in package_status.stderr"
   with_items: "{{ jupyter_apt_packages }}"
   changed_when: false
 
-- name: Install apt packages if not already installed
+- name: Установите пакеты apt, если они еще не установлены
   apt:
     name: "{{ item }}"
     state: present
@@ -18,7 +18,7 @@
   when: package_status.results | selectattr('rc', 'equalto', 1) | map(attribute='item') | list | length > 0
 
 
-- name: Check if JupyterHub directory exists
+- name: Проверка директории JPH
   stat: 
     path: /opt/tljh
   register: jupyterhub_directory
@@ -28,7 +28,7 @@
   shell: "curl -L https://tljh.jupyter.org/bootstrap.py | sudo -E python3 - --admin {{ jupyter_admin_user }}"
   when: not jupyterhub_directory.stat.exists
 
-- name: "Check start page running"
+- name: Проверка стартовой страницы
   uri:
     url: "http://{{ ansible_play_hosts | join('') }}"
     method: GET
@@ -38,13 +38,13 @@
   delay: 6
   when: not ansible_check_mode
 
-- name: "Print address"
+- name: Показать адресс JPH
   debug:
     msg:
       - "Start page available in: http://{{ ansible_play_hosts | join('') }}"
       - "Admin user name: {{ jupyter_admin_user }}"
 
-- name: Check if nbgitpuller is already installed
+- name: Проверка nbgitpuller уже установлен или нет
   command: pip show nbgitpuller
   register: nbgitpuller_status
   ignore_errors: true
