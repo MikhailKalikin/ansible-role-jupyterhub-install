@@ -1,7 +1,7 @@
 ---
-- name: jupyterhub_install
-  hosts: APP
-  become: true
-
+- hosts:
+    - jupyterhub
+  gather_facts: no
   roles:
-    - role: jupyterhub_install
+    - name: jupyterhub_install
+      role: jupyterhub_install
