@@ -33,9 +33,10 @@
     url: "http://{{ ansible_play_hosts | join('') }}"
     method: GET
   register: app_status
-  until: app_status.status == 200
+  until: app_status.status == 200 or ansible_check_mode
   retries: 10
   delay: 6
+  when: not ansible_check_mode
 
 - name: "Print address"
   debug:
@@ -49,23 +50,26 @@
   ignore_errors: true
   changed_when: false
 
-- name: Install nbgitpuller using pip
+- name: Установка nbgitpuller
   pip:
     name: nbgitpuller
     state: present
-  when: nbgitpuller_status.rc != 0
+    when: nbgitpuller_status.rc != 0 and not ansible_check_mode
 
 - name: Выполнить команду mamba -V
   command: /opt/tljh/user/bin/mamba -V
   become: true
+  when: not ansible_check_mode
 
 - name: Выполнить команду mamba install -y -c conda-forge xeus-cling
   command: /opt/tljh/user/bin/mamba install -y -c conda-forge xeus-cling
   become: true
+  when: not ansible_check_mode
 
 - name: Выполнить команду mamba create  -y --name everest python=2.7
   command: /opt/tljh/user/bin/mamba create  -y --name everest python=2.7
   become: true
+  when: not ansible_check_mode
 
 
 
