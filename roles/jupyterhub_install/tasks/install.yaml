@@ -2,6 +2,7 @@
 
 - name: Обновите все пакеты до последней версии
   shell: apt update -y
+  become: true
 
 - name: Проверка, установлен ли каждый пакет
   command: dpkg -s {{ item }}
@@ -16,17 +17,20 @@
     state: present
   loop: "{{ jupyter_apt_packages }}"
   when: package_status.results | selectattr('rc', 'equalto', 1) | map(attribute='item') | list | length > 0
+  become: true
 
 
 - name: Проверка директории JPH
   stat: 
     path: /opt/tljh
   register: jupyterhub_directory
-  changed_when: false    
+  changed_when: false
+  become: true
 
 - name: "Start installation process"
   shell: "curl -L https://tljh.jupyter.org/bootstrap.py | sudo -E python3 - --admin {{ jupyter_admin_user }}"
   when: not jupyterhub_directory.stat.exists
+  become: true
 
 - name: Проверка стартовой страницы
   uri:
@@ -37,6 +41,7 @@
   retries: 10
   delay: 6
   when: not ansible_check_mode
+  become: true
 
 - name: Показать адресс JPH
   debug:
@@ -49,17 +54,20 @@
   register: nbgitpuller_status
   ignore_errors: true
   changed_when: false
+  become: true
 
 - name: Установка nbgitpuller
   pip:
     name: nbgitpuller
     state: present
   when: nbgitpuller_status.rc != 0 and not ansible_check_mode
+  become: true
 
 - name: Выполнить команду mamba -V
   command: /opt/tljh/user/bin/mamba -V
   become: true
   when: not ansible_check_mode
+
 
 - name: Выполнить команду mamba install -y -c conda-forge xeus-cling
   command: /opt/tljh/user/bin/mamba install -y -c conda-forge xeus-cling
