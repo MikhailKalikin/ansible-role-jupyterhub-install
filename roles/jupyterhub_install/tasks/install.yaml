@@ -1,7 +1,7 @@
 ---
 
 - name: Обновите все пакеты до последней версии
-  shell: apt update -y
+  shell: sudo apt update -y
   become: true
 
 - name: Проверка, установлен ли каждый пакет
