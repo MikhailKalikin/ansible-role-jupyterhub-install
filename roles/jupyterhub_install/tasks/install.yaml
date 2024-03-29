@@ -1,7 +1,8 @@
 ---
 
-- name: Обновите все пакеты до последней версии
-  shell: sudo apt update -y
+- name: Обновить все пакеты до последней версии
+  ansible.builtin.apt:
+    update_cache: yes
   become: true
 
 - name: Проверка, установлен ли каждый пакет
