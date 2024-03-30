@@ -1,9 +1,9 @@
 ---
 
-- name: Обновить все пакеты до последней версии
-  ansible.builtin.apt:
-    update_cache: yes
-  become: true
+#- name: Обновить все пакеты до последней версии
+#  ansible.builtin.apt:
+#    update_cache: yes
+#  become: true
 
 - name: Проверка, установлен ли каждый пакет
   command: dpkg -s {{ item }}
